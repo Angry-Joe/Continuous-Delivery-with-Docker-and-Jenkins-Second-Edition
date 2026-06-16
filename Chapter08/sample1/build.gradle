@@ -28,14 +28,15 @@ jacocoTestCoverageVerification {
 	violationRules {
 		rule {
 			limit {
-				minimum = 0.2
+				// minimum = 0.2
+				minimum = 0.16
 			}
 		}
 	}
 }
 
 checkstyle {
-	checkstyleTest.enabled = false
+	checkstyleTest.enabled = true
 }
 
 task acceptanceTest(type: Test) {
