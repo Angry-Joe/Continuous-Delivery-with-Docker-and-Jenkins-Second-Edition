@@ -1,21 +1,39 @@
 pipeline {
-    agent any
+    // Ex05: the build must run inside an agent container that Jenkins provisions.
+    // 'docker-agent' is the label we attach to the Docker Cloud template.
+    agent { label 'docker-agent' }
+
+    // Poll GitHub for changes. Also configure "Poll SCM" in the job UI (lecture notes);
+    // this block keeps the trigger versioned in the Jenkinsfile once the job has run once.
+    triggers {
+        pollSCM('* * * * *')
+    }
+
     stages {
         stage('Announce') {
             steps {
-                sh 'echo this is the main branch'
+                sh 'echo "Pipeline started on agent container: $(hostname)"'
             }
         }
-        stage('Checkout') {
-            steps {
-                git url: 'https://github.com/Angry-Joe/Continuous-Delivery-with-Docker-and-Jenkins-Second-Edition.git',
-                    branch: 'main'
-            }
-        }
-        stage('JaCoCo Checkstyle') {
+
+        // Runs on EVERY build, regardless of whether a *.java file changed.
+        stage('Unit Tests') {
             steps {
                 dir('Chapter08/sample1') {
-                    sh './gradlew clean test jacocoTestReport jacocoTestCoverageVerification'
+                    sh 'chmod +x ./gradlew'
+                    sh './gradlew clean test'
+                }
+            }
+        }
+
+        // Checkstyle + Code Coverage run ONLY when a *.java file was modified.
+        stage('Checkstyle & Code Coverage') {
+            when {
+                changeset '**/*.java'
+            }
+            steps {
+                dir('Chapter08/sample1') {
+                    sh './gradlew checkstyleMain checkstyleTest jacocoTestReport jacocoTestCoverageVerification'
                 }
             }
             post {
@@ -26,10 +44,19 @@ pipeline {
                         keepAll: true,
                         reportDir: 'Chapter08/sample1/build/reports/jacoco/test/html',
                         reportFiles: 'index.html',
-                        reportName: 'jacoco checkstyle'
+                        reportName: 'JaCoCo Coverage'
                     ])
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'pipeline ran perfectly'
+        }
+        failure {
+            echo 'pipeline failure'
         }
     }
 }
