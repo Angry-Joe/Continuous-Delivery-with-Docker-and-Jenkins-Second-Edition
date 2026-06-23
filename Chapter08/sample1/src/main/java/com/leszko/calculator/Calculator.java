@@ -1,3 +1,4 @@
+// Ex05: trivial change to exercise the *.java changeset conditional
 package com.leszko.calculator;
 
 import org.springframework.cache.annotation.Cacheable;
